@@ -172,14 +172,19 @@ class QqtyfetchController extends Controller {
         $url = SCHEDULE_URL . '?date=' . $date;
         $this->query(self::SCHEDULE, $url, $date, $date_formate);
     }
-
+    /**
+     * 每次采集当天中午12:00到第二天12:00之间开始的比赛
+     */
     private function live() {
         $curl = new Multicurl ();
         $curl->maxThread = 30;
         $curl->class = $this;
-        $date = date('Ymd', time());
+        $date = date('Y-m-d', time());
+        $nextdate = date('Y-m-d',strtotime('+1 day'));
+        $sdatetime = strtotime($date.' 12:00:00');//当天中午12:00
+        $edatetime = strtotime($nextdate.' 12:00:00');//第二天12:00
         //所有未结束的比赛（所有未开始的比赛，和，所有已开始但未结束的比赛）
-        $sches = Schedule::find()->where(['ended' => 0,'start_date'=>$date])->all();
+        $sches = Schedule::find()->where(['ended' => 0])->andFilterWhere(['between', 'start_time', $sdatetime, $edatetime])->all();
         $date_formate = date('Y-m-d', time());
         $pan = ['asia', 'euro', 'bigs'];
         $total = count($sches)*3;
