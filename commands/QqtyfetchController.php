@@ -7,6 +7,7 @@
 
 namespace app\commands;
 set_time_limit(0);
+error_reporting(7);
 use yii;
 use app\models\Schedule;
 use app\components\Simpledom;
@@ -26,7 +27,7 @@ class QqtyfetchController extends Controller {
 
     function cbProcessFunc($r, $args) {
         $args['finished']++;
-        echo "start:{$args['finished']}/{$args['total']}\n";
+        echo "{$args['finished']}/{$args['total']} \n";
         $pan = $args['pan'];
         $scheid = $args['scheid'];
         $class = "tb_odds_$pan";
@@ -36,7 +37,6 @@ class QqtyfetchController extends Controller {
             $status = trim($dom->find('div.score_main',0)
                     ->find('div.s_center',0)
                     ->find('p',0)->plaintext);
-            echo "  $status\n";
             if($status == '完场'){
                 $sche = Schedule::findOne($scheid);
                 $sche->ended = 1;
@@ -149,7 +149,7 @@ class QqtyfetchController extends Controller {
         } else {
             Yii::error("No Response:" . $args['url'], "system.fetch");
         }
-        echo "Finish url:{$args['url']}\n";
+        echo " Finish url:{$args['url']}\n";
     }
 
     public function actionIndex($type) {
@@ -175,14 +175,14 @@ class QqtyfetchController extends Controller {
 
     private function live() {
         $curl = new Multicurl ();
-        $curl->maxThread = 100;
+        $curl->maxThread = 30;
         $curl->class = $this;
         $date = date('Ymd', time());
         //所有未结束的比赛（所有未开始的比赛，和，所有已开始但未结束的比赛）
-        $sches = Schedule::find()->where(['ended' => 0])->all();
+        $sches = Schedule::find()->where(['ended' => 0,'start_date'=>$date])->all();
         $date_formate = date('Y-m-d', time());
         $pan = ['asia', 'euro', 'bigs'];
-        $total = count($sches);
+        $total = count($sches)*3;
         $finished = 0;
         foreach ($sches as $sche) {
             $scheid = $sche->id;
@@ -216,7 +216,6 @@ class QqtyfetchController extends Controller {
         $dom = Simpledom::get_dom($url);
         echo $url . "\n";
         $matchDivs = $dom->find('div.match');
-        var_dump($matchDivs);
         $pre_hour = 0;
         foreach ($matchDivs as $idx => $matchDiv) {
             $data_url = $matchDiv->attr['data-url'];
